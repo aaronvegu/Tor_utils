@@ -1,5 +1,5 @@
 import csv
-import itertools
+import time
 
 def read_relay_data_from_csv(file_path):
     print('Reading relay data from csv...')
@@ -13,12 +13,20 @@ def read_relay_data_from_csv(file_path):
 
 def generate_circuit_combinations(relay_data):
     print('Calculate of combinations started...')
-    guard_relay_data = [relay for relay in relay_data if relay['Guard'] == 'Yes' and relay['Middle'] != 'Yes']
-    middle_relay_data = [relay for relay in relay_data if relay['Middle'] == 'Yes' and relay['Guard'] != 'Yes']
+    start_time = time.time()
+    guard_relay_data = [relay for relay in relay_data if relay['Guard'] == 'Yes']
+    middle_relay_data = [relay for relay in relay_data if relay['Middle'] == 'Yes']
     exit_relay_data = [relay for relay in relay_data if relay['Exit'] == 'Yes']
 
-    circuits = list(itertools.product(guard_relay_data, middle_relay_data, exit_relay_data))
-    print('Circuit combinations finished')
+    circuits = []
+
+    for guard in guard_relay_data:
+        for middle in middle_relay_data:
+            if guard['Fingerprint'] != middle['Fingerprint']:
+                for exit in exit_relay_data:
+                    circuits.append((guard, middle, exit))
+    end_time = time.time()
+    print(f"Circuit combinations finished.\nTime taken: {end_time - start_time:.4f} seconds")
     return circuits
 
 def write_circuit_combinations_to_file(circuits, output_file):
@@ -35,11 +43,19 @@ def write_circuit_combinations_to_file(circuits, output_file):
                 circuit[2]['Fingerprint'],
                 circuit[2]['Address'],
             ])
+            writer.writerow([
+                ' ',
+                ' ',
+                circuit[1]['Fingerprint'],
+                circuit[1]['Address'],
+                circuit[2]['Fingerprint'],
+                circuit[2]['Address'],
+            ])
     print('Combination writing finished...')
 
 def main():
     input_csv_file = 'relay_data.csv'  # Replace with the path to your input CSV file
-    output_csv_file = 'circuit_combinations.csv'  # Replace with the desired output CSV file name
+    output_csv_file = 'sample_combinations_wAddress.csv'  # Replace with the desired output CSV file name
 
     relay_data = read_relay_data_from_csv(input_csv_file)
     circuits = generate_circuit_combinations(relay_data)
